@@ -16,6 +16,7 @@ const SearchPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [view, setView] = useState(true);
+  // const [counts,setCounts]=useState(0)
 
   const formatDate = (timestamp) => {
     if (!timestamp) return "N/A";
@@ -85,6 +86,8 @@ const SearchPage = () => {
 
   // Auto-update on checkbox or country change
   useEffect(() => {
+    // setCounts(results?.body?.hits?.total?.value)
+
     // if (results?.body?.aggregations?.current_owners?.buckets) {
     //   setOwners(results.body.aggregations.current_owners.buckets);
     // }
@@ -98,15 +101,18 @@ const SearchPage = () => {
       handleSearch();
     }
     // handleSearch();
+
   }, [
     selectedOwners,
     selectedAttorneys,
     selectedLawFirms,
     country,
     selectedStatus,
+    
   ]);
   window.onload=()=>{
     handleSearch();
+
   }
 
   return (
@@ -144,6 +150,13 @@ const SearchPage = () => {
         </div>
       </header>
       <hr className="border-2 border-blue-200" />
+      <br />
+      <div className="text-xl font-semibold">
+        <p>About  <span className="text-green-500"> {results?.body?.hits?.total?.value}</span> Trademarks found for query</p>
+        <br />
+        <hr />
+       
+      </div>
       <br />
 
       <div className="flex gap-8">
