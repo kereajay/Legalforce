@@ -3,12 +3,13 @@ import { GiPotionBall } from "react-icons/gi";
 import { HiRefresh } from "react-icons/hi";
 import Load from "./Load";
 import { toast } from "react-toastify";
+import { BsFilterLeft } from "react-icons/bs";
 
-const SearchPage = () => {
+const App = () => {
   const [query, setQuery] = useState("nike");
   const [country, setCountry] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
-  const [owners,setOwners]=useState([]);
+  const [owners, setOwners] = useState([]);
   const [selectedOwners, setSelectedOwners] = useState([]);
   const [selectedAttorneys, setSelectedAttorneys] = useState([]);
   const [selectedLawFirms, setSelectedLawFirms] = useState([]);
@@ -16,7 +17,7 @@ const SearchPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [view, setView] = useState(true);
-  // const [counts,setCounts]=useState(0)
+  const [filterval, setFilterval] = useState(false);
 
   const formatDate = (timestamp) => {
     if (!timestamp) return "N/A";
@@ -64,11 +65,10 @@ const SearchPage = () => {
       // setOwners(results?.body?.aggregations?.current_owners?.buckets)
     } catch (err) {
       setError(err.message);
-      toast.error(`Error:${err.message}`,
-        {position:"top-right",
-          autoClose:1400
-        }
-      )
+      toast.error(`Error:${err.message}`, {
+        position: "top-right",
+        autoClose: 1400,
+      });
     } finally {
       setLoading(false);
     }
@@ -85,6 +85,7 @@ const SearchPage = () => {
   };
 
   // Auto-update on checkbox or country change
+  // handle all the state update
   useEffect(() => {
     // setCounts(results?.body?.hits?.total?.value)
 
@@ -95,28 +96,38 @@ const SearchPage = () => {
       selectedOwners.length ||
       selectedAttorneys.length ||
       selectedLawFirms.length ||
-      country ||
-      selectedStatus.length
+      selectedStatus ||
+      country
     ) {
       handleSearch();
     }
     // handleSearch();
-
   }, [
     selectedOwners,
     selectedAttorneys,
     selectedLawFirms,
     country,
     selectedStatus,
-    
   ]);
-  window.onload=()=>{
+  // initial call of handle search
+  useEffect(() => {
     handleSearch();
+  }, [
+    selectedOwners,
+    selectedAttorneys,
+    selectedLawFirms,
+    country,
+    selectedStatus,
+  ]);
 
-  }
+  // toogling the status
+  const toggleStatus = (status) => {
+    setSelectedStatus(status === selectedStatus ? "" : status); // Toggle status
+  };
 
   return (
     <div className=" p-4">
+      {/* header with searchbar */}
       <header className=" mb-8 flex flex-row items-center   ">
         <div>
           <img
@@ -152,144 +163,31 @@ const SearchPage = () => {
       <hr className="border-2 border-blue-200" />
       <br />
       <div className="text-xl font-semibold">
-        <p>About  <span className="text-green-500"> {results?.body?.hits?.total?.value}</span> Trademarks found for query</p>
+        <p>
+          About{" "}
+          <span className="text-green-500">
+            {" "}
+            {results?.body?.hits?.total?.value}
+          </span>{" "}
+          Trademarks found for query
+        </p>
         <br />
         <hr />
-       
       </div>
       <br />
 
       <div className="flex gap-8">
         {/* Sidebar Filters */}
-        <aside className="w-64 border-r border-gray-200 pr-4 space-y-6">
-          {/* Country Dropdown */}
-          <div className="flex items-center border border-grey-300 p-5 rounded-xl hover:border-blue-200 gap-8">
-            <label htmlFor="country" className="block mb-1 font-bold">
-              Country
-            </label>
-            <select
-              id="country"
-              value={country}
-              onChange={(e) => setCountry(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">All</option>
-              <option value="US">US</option>
-              <option value="DE">DE</option>
-              <option value="FR">FR</option>
-            </select>
-          </div>
 
-          {/* Status Button Group - FIXED CSS */}
-          <div>
-            <label className="block mb-1 font-bold ">Status</label>
-            <div className="flex flex-wrap gap-2">
-              {["", "registered", "abandoned", "other", "pending"].map(
-                (status) => (
-                  <button
-                    key={status || "all"}
-                    onClick={() => setSelectedStatus(status)}
-                    className={`px-4 py-2 border rounded-md ${selectedStatus === status
-                      ? "bg-blue-500 text-white"
-                      : "bg-white text-gray-700"
-                      } flex items-center gap-1`}
-                  >
-                    <div
-                      className={`h-4 w-4 rounded-full
-                      ${status == "registered" ? "bg-green-500" : ""}
-                      ${status == "abandoned" ? "bg-red-600" : ""}
-                      ${status == "pending" ? "bg-yellow-400" : ""}
-                      ${status == "other" ? "bg-blue-400" : ""}
-                      ${status == "" ? "h-0 w-0" : ""}
-                      `}
-                    ></div>
-                    {status === ""
-                      ? "All"
-                      : status.charAt(0).toUpperCase() + status.slice(1)}
-                  </button>
-                )
-              )}
-            </div>
-          </div>
-
-          {/* Owners Checkboxes */}
-          <div className="overflow-auto max-h-64 border-2 border-gray-300 p-4 rounded-md">
-            <label className="block mb-1 font-medium">Owners</label>
-            {results?.body?.aggregations?.current_owners?.buckets?.map(
-              (bucket) => (
-                <div key={bucket.key} className="flex items-center min-w-max">
-                  <input
-                    type="checkbox"
-                    value={bucket.key}
-                    onChange={handleCheckboxChange(setSelectedOwners)}
-                    className="mr-2"
-                  />
-                  <label className="text-sm">
-                    {bucket.key} ({bucket.doc_count})
-                  </label>
-                </div>
-              )
-            )}
-          </div>
-
-          {/* Attorneys Checkboxes */}
-          <div className="overflow-auto max-h-64 border-2 border-gray-300 p-4 rounded-md">
-            <label className="block mb-1 font-medium">Attorneys</label>
-            {results?.body?.aggregations?.attorneys?.buckets?.map((bucket) => (
-              <div key={bucket.key} className="flex items-center min-w-52">
-                <input
-                  type="checkbox"
-                  value={bucket.key}
-                  onChange={handleCheckboxChange(setSelectedAttorneys)}
-                  className="mr-2"
-                />
-                <label className="text-sm">
-                  {bucket.key} ({bucket.doc_count})
-                </label>
-              </div>
-            ))}
-          </div>
-
-          {/* Law Firms Checkboxes */}
-          <div className="overflow-auto max-h-60 border-2 border-gray-300 p-4  rounded-md ">
-            <label className="block mb-1 font-medium">Law Firms</label>
-            {results?.body?.aggregations?.law_firms?.buckets?.map((bucket) => (
-              <div key={bucket.key} className="flex items-center min-w-max ">
-                <input
-                  type="checkbox"
-                  value={bucket.key}
-                  onChange={handleCheckboxChange(setSelectedLawFirms)}
-                  className="mr-2"
-                />
-                <label className="text-sm">
-                  {bucket.key} ({bucket.doc_count})
-                </label>
-              </div>
-            ))}
-          </div>
-
-          {/* view buttons */}
-          <div className="border-2  border-grey-200 p-4 flex gap-2 rounded-xl hover:border-blue-300">
-            <button
-              className={`p-2 border rounded-xl font-semibold ${view ? "bg-blue-300" : ""}`}
-              onClick={() => setView(!view)}
-            >
-              List View
-            </button>
-            <button
-              className={`p-2 border rounded-xl font-semibold ${!view ? "bg-blue-300" : ""}`}
-
-              onClick={() => setView(!view)}
-            >
-              Grid View
-            </button>
-          </div>
-        </aside>
-
-        {/* Results Section */}
+        {/* Results Section with list view */}
         {view && (
           <section className="flex-1 ">
-            {loading && <p className="flex justify-center items-center "><Load className="" /><span className="text-3xl">.......</span></p>}
+            {loading && (
+              <p className="flex justify-center items-center ">
+                <Load className="" />
+                <span className="text-3xl">.......</span>
+              </p>
+            )}
             {/* {error && <p className="text-center text-red-500">{error}</p>} */}
             {results?.body?.hits?.hits?.length > 0 ? (
               <div className="space-y-4 w-full">
@@ -323,22 +221,26 @@ const SearchPage = () => {
                     <div className="text-center">
                       <p
                         className={`text-lg  font-semibold 
-                      ${item._source?.status_type == "registered"
-                            ? "text-green-400"
-                            : ""
-                          }
-                      ${item._source?.status_type == "abandoned"
-                            ? "text-red-500"
-                            : ""
-                          }
-                      ${item._source?.status_type == "pending"
-                            ? "text-yellow-400"
-                            : ""
-                          }
-                      ${item._source?.status_type == "other"
-                            ? "text-blue-300"
-                            : ""
-                          }
+                      ${
+                        item._source?.status_type == "registered"
+                          ? "text-green-400"
+                          : ""
+                      }
+                      ${
+                        item._source?.status_type == "abandoned"
+                          ? "text-red-500"
+                          : ""
+                      }
+                      ${
+                        item._source?.status_type == "pending"
+                          ? "text-yellow-400"
+                          : ""
+                      }
+                      ${
+                        item._source?.status_type == "other"
+                          ? "text-blue-300"
+                          : ""
+                      }
                       `}
                       >
                         {item._source?.status_type || "N/A"}
@@ -374,18 +276,6 @@ const SearchPage = () => {
                         <p className="flex gap-2">
                           {item._source.class_codes.length < 3
                             ? item._source.class_codes.map((itemc) => {
-                              return (
-                                <>
-                                  <p className="flex items-center gap-2">
-                                    {" "}
-                                    <GiPotionBall /> class {itemc}
-                                  </p>
-                                </>
-                              );
-                            })
-                            : item._source.class_codes
-                              .slice(0, 3)
-                              .map((itemc) => {
                                 return (
                                   <>
                                     <p className="flex items-center gap-2">
@@ -394,7 +284,19 @@ const SearchPage = () => {
                                     </p>
                                   </>
                                 );
-                              })}
+                              })
+                            : item._source.class_codes
+                                .slice(0, 3)
+                                .map((itemc) => {
+                                  return (
+                                    <>
+                                      <p className="flex items-center gap-2">
+                                        {" "}
+                                        <GiPotionBall /> class {itemc}
+                                      </p>
+                                    </>
+                                  );
+                                })}
                         </p>
                       </div>
                     </div>
@@ -408,9 +310,15 @@ const SearchPage = () => {
             )}
           </section>
         )}
+        {/* result section with grid view */}
         {!view && (
           <section className="flex-1 ">
-            {loading && <p className="flex justify-center items-center "><Load className="" /><span className="text-3xl">.......</span></p>}
+            {loading && (
+              <p className="flex justify-center items-center ">
+                <Load className="" />
+                <span className="text-3xl">.......</span>
+              </p>
+            )}
             {/* {error && <p className="text-center text-red-500">{error}</p>} */}
             {results?.body?.hits?.hits?.length > 0 ? (
               <div className="w-full grid lg:grid-cols-3 md:grid-cols-2 sm-grid-cols-1  gap-5 ">
@@ -426,22 +334,26 @@ const SearchPage = () => {
                       <div>
                         <p
                           className={`text-sm  font-semibold 
-                      ${item._source?.status_type == "registered"
-                              ? "text-green-400"
-                              : ""
-                            }
-                      ${item._source?.status_type == "abandoned"
-                              ? "text-red-500"
-                              : ""
-                            }
-                      ${item._source?.status_type == "pending"
-                              ? "text-yellow-400"
-                              : ""
-                            }
-                      ${item._source?.status_type == "other"
-                              ? "text-blue-300"
-                              : ""
-                            }
+                      ${
+                        item._source?.status_type == "registered"
+                          ? "text-green-400"
+                          : ""
+                      }
+                      ${
+                        item._source?.status_type == "abandoned"
+                          ? "text-red-500"
+                          : ""
+                      }
+                      ${
+                        item._source?.status_type == "pending"
+                          ? "text-yellow-400"
+                          : ""
+                      }
+                      ${
+                        item._source?.status_type == "other"
+                          ? "text-blue-300"
+                          : ""
+                      }
                       `}
                         >
                           {item._source?.status_type || "N/A"}
@@ -473,7 +385,14 @@ const SearchPage = () => {
                         </p>
                       </div>
                       <div>
-                        <p className="flex items-center gap-1"><small className="text-red-500"><HiRefresh /></small><small>{formatDate(item._source?.renewal_date)}</small></p>
+                        <p className="flex items-center gap-1">
+                          <small className="text-red-500">
+                            <HiRefresh />
+                          </small>
+                          <small>
+                            {formatDate(item._source?.renewal_date)}
+                          </small>
+                        </p>
                       </div>
                     </div>
 
@@ -481,42 +400,47 @@ const SearchPage = () => {
                       <p className="flex gap-4">
                         {item._source.class_codes.length < 3
                           ? item._source.class_codes.map((itemc) => {
-                            return (
-                              <>
-                                <p className="flex items-center gap-1">
-                                  {" "}
-                                  <GiPotionBall /> <small>{itemc}</small>
-                                </p>
-                              </>
-                            );
-                          })
-                          : item._source.class_codes
-                            .slice(0, 3)
-                            .map((itemc) => {
                               return (
                                 <>
                                   <p className="flex items-center gap-1">
                                     {" "}
-                                    <GiPotionBall />  <small>{itemc}</small>
+                                    <GiPotionBall /> <small>{itemc}</small>
                                   </p>
                                 </>
                               );
-                            })}
+                            })
+                          : item._source.class_codes
+                              .slice(0, 3)
+                              .map((itemc) => {
+                                return (
+                                  <>
+                                    <p className="flex items-center gap-1">
+                                      {" "}
+                                      <GiPotionBall /> <small>{itemc}</small>
+                                    </p>
+                                  </>
+                                );
+                              })}
                       </p>
-
                     </div>
                     <div className="mt-3 leading-none">
                       <p>
                         {item._source?.mark_description_description
                           .slice(0, 1)
                           .map((itemmark) => {
-                            return <><small>{itemmark.slice(0, 50)}</small></>;
+                            return (
+                              <>
+                                <small>{itemmark.slice(0, 50)}</small>
+                              </>
+                            );
                           })}
                       </p>
                     </div>
                     <br />
                     <div className="">
-                      <button className="border-2 border-blue-300 px-5 py-2 rounded-lg font-semibold ">View</button>
+                      <button className="border-2 border-blue-300 px-5 py-2 rounded-lg font-semibold ">
+                        View
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -528,9 +452,175 @@ const SearchPage = () => {
             )}
           </section>
         )}
+
+        <aside className="w-64 border-r border-gray-200 pr-4 space-y-6">
+          <div>
+            <button
+              className={` border-2 flex items-center gap-1 px-4 py-2 rounded-xl font-semibold text-xl ${
+                filterval ? "bg-blue-300" : ""
+              }`}
+              onClick={() => setFilterval(!filterval)}
+            >
+              Filter{" "}
+              <span className="text-2xl">
+                {" "}
+                <BsFilterLeft />
+              </span>
+            </button>
+          </div>
+          {filterval && (
+            <div className="w-64 border-r border-gray-200 pr-4 space-y-6">
+              {/* Country Dropdown */}
+              <div className="flex items-center border border-grey-300 p-5 rounded-xl hover:border-blue-200 gap-8">
+                <label htmlFor="country" className="block mb-1 font-bold">
+                  Country
+                </label>
+                <select
+                  id="country"
+                  value={country}
+                  onChange={(e) => setCountry(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">All</option>
+                  <option value="US">US</option>
+                  <option value="DE">DE</option>
+                  <option value="FR">FR</option>
+                </select>
+              </div>
+
+              {/* Status Button Group - FIXED CSS */}
+              <div className="border-2 border-grey-200 rounded-xl py-4 px-2">
+                <label className="block mb-1 font-bold">Status</label>
+                <div className="flex flex-wrap gap-2">
+                  {["", "registered", "abandoned", "other", "pending"].map(
+                    (status) => (
+                      <button
+                        key={status || "all"}
+                        onClick={() => toggleStatus(status)}
+                        className={`px-4 py-2 border rounded-md ${
+                          selectedStatus === status
+                            ? "bg-blue-500 text-white"
+                            : "bg-white text-gray-700"
+                        } flex items-center gap-1`}
+                      >
+                        {status && (
+                          <div
+                            className={`h-4 w-4 rounded-full ${
+                              status === "registered"
+                                ? "bg-green-500"
+                                : status === "abandoned"
+                                ? "bg-red-600"
+                                : status === "pending"
+                                ? "bg-yellow-400"
+                                : status === "other"
+                                ? "bg-blue-400"
+                                : "hidden"
+                            }`}
+                          ></div>
+                        )}
+                        {status === ""
+                          ? "All"
+                          : status.charAt(0).toUpperCase() + status.slice(1)}
+                      </button>
+                    )
+                  )}
+                </div>
+              </div>
+
+              {/* Owners Checkboxes */}
+              <div className="overflow-auto max-h-64 border-2 border-gray-300 p-4 rounded-md">
+                <label className="block mb-1 font-medium">Owners</label>
+                {results?.body?.aggregations?.current_owners?.buckets?.map(
+                  (bucket) => (
+                    <div
+                      key={bucket.key}
+                      className="flex items-center min-w-max"
+                    >
+                      <input
+                        type="checkbox"
+                        value={bucket.key}
+                        onChange={handleCheckboxChange(setSelectedOwners)}
+                        className="mr-2"
+                      />
+                      <label className="text-sm">
+                        {bucket.key} ({bucket.doc_count})
+                      </label>
+                    </div>
+                  )
+                )}
+              </div>
+
+              {/* Attorneys Checkboxes */}
+              <div className="overflow-auto max-h-64 border-2 border-gray-300 p-4 rounded-md">
+                <label className="block mb-1 font-medium">Attorneys</label>
+                {results?.body?.aggregations?.attorneys?.buckets?.map(
+                  (bucket) => (
+                    <div
+                      key={bucket.key}
+                      className="flex items-center min-w-52"
+                    >
+                      <input
+                        type="checkbox"
+                        value={bucket.key}
+                        onChange={handleCheckboxChange(setSelectedAttorneys)}
+                        className="mr-2"
+                      />
+                      <label className="text-sm">
+                        {bucket.key} ({bucket.doc_count})
+                      </label>
+                    </div>
+                  )
+                )}
+              </div>
+
+              {/* Law Firms Checkboxes */}
+              <div className="overflow-auto max-h-60 border-2 border-gray-300 p-4  rounded-md ">
+                <label className="block mb-1 font-medium">Law Firms</label>
+                {results?.body?.aggregations?.law_firms?.buckets?.map(
+                  (bucket) => (
+                    <div
+                      key={bucket.key}
+                      className="flex items-center min-w-max "
+                    >
+                      <input
+                        type="checkbox"
+                        value={bucket.key}
+                        onChange={handleCheckboxChange(setSelectedLawFirms)}
+                        className="mr-2"
+                      />
+                      <label className="text-sm">
+                        {bucket.key} ({bucket.doc_count})
+                      </label>
+                    </div>
+                  )
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* view buttons */}
+          <div className="border-2  border-grey-200 p-4 flex gap-2 rounded-xl hover:border-blue-300">
+            <button
+              className={`p-2 border rounded-xl font-semibold ${
+                view ? "bg-blue-300" : ""
+              }`}
+              onClick={() => setView(!view)}
+            >
+              List View
+            </button>
+            <button
+              className={`p-2 border rounded-xl font-semibold ${
+                !view ? "bg-blue-300" : ""
+              }`}
+              onClick={() => setView(!view)}
+            >
+              Grid View
+            </button>
+          </div>
+        </aside>
       </div>
     </div>
   );
 };
 
-export default SearchPage;
+export default App;
